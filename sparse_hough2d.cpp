@@ -73,6 +73,9 @@ static inline p2i_t write_to_theta_rho(
 void sparse_hough2d_lines::pairwise_hough(const std::vector<std::array<size_t,2>>& vin,std::vector<size_t>& ho)
 {
 	const size_t N=vin.size();
+	ho.clear();
+	ho.reserve(N*(N+1)/2);
+	static_assert(sizeof(size_t)==8);
 	for(size_t i=0;i<N;i++)
 	{
 		for(size_t j=0;j<i;j++)
@@ -80,7 +83,9 @@ void sparse_hough2d_lines::pairwise_hough(const std::vector<std::array<size_t,2>
 			p2i_t v1=vin[i];
 			p2i_t v2=vin[j];
 			p2i_t out=write_to_theta_rho(v1,v2,theta_scale,rho_scale);
-			ho[out[1]*theta_n+out[0]]++;
+			//ho[out[1]*theta_n+out[0]]++;
+			size_t vp=out[0] | (out[1] << 32); //this doesn't work on 32 bit platforms!
+			ho.push_back(vp);
 		}
 	}
 }
@@ -101,11 +106,12 @@ std::vector<std::array<size_t,2>> sparse_hough2d_lines::get_windows(size_t windo
 void sparse_hough2d_lines::load_hough()
 {
 	const size_t N=windows.size();
+	std::vector<size_t> hcache;
 	for(size_t i=0;i<N;i++)
 	{
 		std::vector<p2i_t> wp=find_all_window_points(samples,shape,{windowsize,windowsize},windows[i]);
 		//std::cerr << "Window " << windows[i][0] << "," << windows[i][1] << std::endl;
-		pairwise_hough(wp,hough_out);
+		pairwise_hough(wp,hcache);
 	}
 }
 
