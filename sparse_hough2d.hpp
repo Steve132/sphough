@@ -12,9 +12,6 @@ class sparse_hough2d_lines
 {
 protected:
 	std::vector<bool> samples;
-	size_t theta_n,rho_n;
-	std::array<size_t,2> shape;
-	std::vector<size_t> hough_out; 
 	std::vector<std::array<size_t,2>> windows;
 	size_t windowsize;
 	
@@ -26,6 +23,9 @@ protected:
 	float rho_max;
 	float theta_scale;
 public:
+	std::array<size_t,2> shape;
+	std::vector<size_t> hough_out; 
+	size_t theta_n,rho_n;
 	sparse_hough2d_lines(const std::array<size_t,2>& tshape,const std::array<size_t,2>& ttheta_rho_shape={},size_t twindowsize=512,size_t toverlap_pixels=64);
 	
 	template<class Signal>
@@ -42,6 +42,8 @@ public:
 	{
 		std::fill(hough_out.begin(),hough_out.end(),0);
 	}
+	
+	
 };
 
 //cache is size*size = shape[0]*shape[1]*shape[0]*shape[1]
