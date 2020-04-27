@@ -30,8 +30,8 @@ public:
 		bool operator<(const pixel_point& other) const { return count < other.count; }
 	};
 	
-	void top_k(size_t k,pixel_point* pout) const;
-	void cluster_top_k(size_t,const pixel_point* pout) const;
+	void top_k(unsigned k,pixel_point* pout) const;
+	unsigned int cluster_top_k(unsigned k,pixel_point* pointsinout,float theta_boundary,float rho_boundary) const;
 };
 
 

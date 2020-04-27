@@ -38,7 +38,7 @@ void naive_hough2d_lines::process_samples(size_t tbegin,size_t tend)
 		for(size_t t=tbegin;t<tend;t++)
 		{
 			std::array<float,2> cs=cs_theta_cache[t];
-			float rho=std::abs(fx*cs[0]+fy*cs[1]);
+			float rho=std::fabs(fx*cs[0]+fy*cs[1]);
 			size_t rho_out=static_cast<size_t>(rho*rho_scale);
 			//hough_out[rho_out*theta_n+t].fetch_add(1,std::memory_order_relaxed);
 			hough_out[rho_out*theta_n+t]++;
@@ -51,15 +51,15 @@ static inline std::array<float,3> to_line(float a,float b,float ac)
 	return {a,b,-ac};
 }
 
-void naive_hough2d_lines::top_k(size_t k,naive_hough2d_lines::pixel_point* pout) const
+void naive_hough2d_lines::top_k(unsigned int k,naive_hough2d_lines::pixel_point* pout) const
 {
 	std::iota(iota_cache.begin(),iota_cache.end(),0);
 	auto cmpfunc=[this](size_t ai,size_t bi){
 		return hough_out[ai] < hough_out[bi];
 	};
-	auto kiterpoint=iota_cache.begin() + iota_cache.size()-1-k;
+	auto kiterpoint=iota_cache.begin() + iota_cache.size()-k;
 	std::nth_element(iota_cache.begin(),kiterpoint,iota_cache.end(),cmpfunc);
-	kiterpoint=iota_cache.begin() + iota_cache.size()-1-k;
+	kiterpoint=iota_cache.begin() + iota_cache.size()-k;
 	
 	float itscale=1.0f/theta_scale;float irscale=1.0f/rho_scale;
 	
@@ -69,7 +69,7 @@ void naive_hough2d_lines::top_k(size_t k,naive_hough2d_lines::pixel_point* pout)
 		size_t hi=*ki;
 		size_t count=hough_out[hi];
 		
-		pixel_point pp;
+		naive_hough2d_lines::pixel_point pp;
 		pp.theta_rho_index=std::array<uint32_t,2>{hi % theta_n,hi/theta_n};
 		pp.theta_rho=std::array<float,2>{itscale*static_cast<float>(pp.theta_rho_index[0]),irscale*static_cast<float>(pp.theta_rho_index[1])};
 		
@@ -79,3 +79,69 @@ void naive_hough2d_lines::top_k(size_t k,naive_hough2d_lines::pixel_point* pout)
 		pout[i++]=pp;
 	}
 }
+
+static bool cluster_inside(const naive_hough2d_lines::pixel_point& cluster,const naive_hough2d_lines::pixel_point& point,float tb, float rb)
+{
+	return (fabs(cluster.theta_rho[0]-point.theta_rho[0]) < tb) && (fabs(cluster.theta_rho[1]-point.theta_rho[1]) < rb);
+}
+
+
+static std::ostream& operator<<(std::ostream& out,const naive_hough2d_lines::pixel_point& pp)
+{
+	return out << "{theta:" << pp.theta_rho[0] << " rho:" << pp.theta_rho[1] << " count: " << pp.count << "}";
+}
+
+static naive_hough2d_lines::pixel_point& operator+=(
+	naive_hough2d_lines::pixel_point& clu,
+	const naive_hough2d_lines::pixel_point& pp)
+{
+	float newcount=clu.count+pp.count;
+	for(int tri=0;tri<2;tri++)
+		clu.theta_rho[tri]=(clu.theta_rho[tri]*clu.count+pp.theta_rho[tri]*pp.count)/newcount;	
+	clu.count+=pp.count;
+	//restore the line after
+}
+unsigned int naive_hough2d_lines::cluster_top_k(
+	unsigned int K,pixel_point* points,
+	float theta_boundary,float rho_boundary) const
+{
+	
+	std::vector<pixel_point> clusters;
+	//std::iota(cluster_assignments.begin(),cluster_assignments.end(),0);	
+	for(unsigned int i=0;i<K;i++)
+	{
+		unsigned int proposed_cluster=clusters.size();
+		for(unsigned int ci=0;ci<clusters.size();ci++)
+		{
+			if(cluster_inside(clusters[ci],points[i],theta_boundary,rho_boundary))
+			{
+				proposed_cluster=ci;
+				break;
+			}
+		}
+		if(proposed_cluster==clusters.size())
+		{
+			std::cout << points[i] << " is a new cluster." << std::endl;
+			clusters.push_back(points[i]);
+		}
+		else
+		{
+			pixel_point& clu=clusters[proposed_cluster];
+			const pixel_point& pp=points[i];
+			std::cout << "adding " << pp << " to " << clu << "\n\tResults in";
+			clu+=pp;
+			clu.count+=pp.count;
+			std::cout << clu << std::endl;
+		}
+	}
+	
+	for(unsigned int ki=0;ki<clusters.size();ki++)
+	{
+		pixel_point& clu=clusters[ki];
+		clu.theta_rho_index[0]=static_cast<unsigned int>(clu.theta_rho[0]*theta_scale);
+		clu.theta_rho_index[1]=static_cast<unsigned int>(clu.theta_rho[1]*rho_scale);
+		points[ki]=clu;
+	}
+	return clusters.size();
+}
+

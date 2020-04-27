@@ -2,6 +2,7 @@
 #include<iostream>
 #define cimg_use_jpeg
 #include<CImg.h>
+#include<cmath>
 #include<chrono>
 using namespace std;
 using namespace cimg_library;
@@ -29,8 +30,33 @@ void perftest(const CImg<float>& zout)
 		std::cout << "Elapsed time: " << elapsed << std::endl;
 	}//zout.display();	
 }
+
+
+void fft_test()
+{
+	size_t N=1024;
+	float z={1.0}; 
+	CImg<float> orig_signal(N,N,1,1);
+	
+	std::array<size_t,2> mid{N/2,N/2};
+	float th=(M_PI/180.0f)*45.0f;
+	std::array<size_t,2> vec{std::cos(th)*(N/2),std::sin(th)*(N/2)};
+	
+	
+	orig_signal.draw_line(mid[0]-vec[0],mid[1]-vec[1],mid[0]+vec[0],mid[1]+vec[1],&z);
+	
+	orig_signal.display();
+	auto CList=orig_signal.get_FFT();
+	auto mag=(CList[0].get_mul(CList[0])+CList[1].get_mul(CList[1])).get_sqrt();
+	mag.display();
+}
+
+
+
 int main()
-{  
+{
+	//fft_test();
+	//return 0;
 	CImg<unsigned char> image("../cards.jpg");
 	
 	CImg<float> gscal=image.get_RGBtoHSL().get_channel(2);
@@ -55,13 +81,14 @@ int main()
 	
 	std::cout << "Elapsed time: " << elapsed << std::endl;
 	
-	
 	CImg<uint32_t> htz(lines.hough_out.data(),lines.theta_n,lines.rho_n,1,1,true);
 	
 	CImg<uint32_t> zimg(lines.theta_n,lines.rho_n,1,3);
 	for(unsigned c=0;c<3;c++) zimg.get_shared_channel(c).assign(htz);
 	
-	for(unsigned k=0;k<K;k++) 
+	unsigned int newk=lines.cluster_top_k(K,&pointsout[0],0.1,40.0f);
+	//unsigned int newk=K;
+	for(unsigned k=0;k<newk;k++) 
 	{
 		auto pp=pointsout[k];
 		zimg(pp.theta_rho_index[0],pp.theta_rho_index[1],0,1)=0;
