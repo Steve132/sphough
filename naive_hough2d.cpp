@@ -74,7 +74,7 @@ void naive_hough2d_lines::top_k(unsigned int k,naive_hough2d_lines::pixel_point*
 		pp.theta_rho=std::array<float,2>{itscale*static_cast<float>(pp.theta_rho_index[0]),irscale*static_cast<float>(pp.theta_rho_index[1])};
 		
 		std::array<float,2> cs=cs_theta_cache[pp.theta_rho_index[0]];
-		pp.line={cs[0],cs[1],-pp.theta_rho[1]};
+		pp.line=to_line(cs[0],cs[1],pp.theta_rho[1]);
 		pp.count=count;
 		pout[i++]=pp;
 	}
@@ -88,7 +88,11 @@ static bool cluster_inside(const naive_hough2d_lines::pixel_point& cluster,const
 
 static std::ostream& operator<<(std::ostream& out,const naive_hough2d_lines::pixel_point& pp)
 {
-	return out << "{theta:" << pp.theta_rho[0] << " rho:" << pp.theta_rho[1] << " count: " << pp.count << "}";
+	return out << "{theta:" << pp.theta_rho[0] 
+				<< " rho:" << pp.theta_rho[1]
+				<< " count: " << pp.count 
+				<< " line:(" << pp.line[0] << "," << pp.line[1] << "," << pp.line[2] << ")"
+				<< "}";
 }
 
 static naive_hough2d_lines::pixel_point& operator+=(
@@ -140,7 +144,10 @@ unsigned int naive_hough2d_lines::cluster_top_k(
 		pixel_point& clu=clusters[ki];
 		clu.theta_rho_index[0]=static_cast<unsigned int>(clu.theta_rho[0]*theta_scale);
 		clu.theta_rho_index[1]=static_cast<unsigned int>(clu.theta_rho[1]*rho_scale);
+		
+		clu.line=to_line(cosf(clu.theta_rho[0]),sinf(clu.theta_rho[0]),clu.theta_rho[1]);
 		points[ki]=clu;
+		std::cout << "c " << ki << "=" << points[ki] << std::endl;
 	}
 	return clusters.size();
 }
