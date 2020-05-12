@@ -53,12 +53,48 @@ static inline std::array<float,3> to_line(float a,float b,float ac)
 
 void naive_hough2d_lines::top_k(unsigned int k,naive_hough2d_lines::pixel_point* pout) const
 {
+	// get max over neighborhood in image, assuming cluster width of n.  Merge first rather than get top-k universal values THEN get top-k maxes.
+	std::vector<uint32_t> max_hough_out(hough_out.size(),0);
+	std::size_t n = 10; // cluster diameter (must be even)
+	// move row center of neighborhood
+	// UH: pass in this size stuff/keep somehow but hough_out dims are 1800x1024.
+	for(std::size_t i = n/2; i < 1024 - n/2; i+=n)
+	{
+		// move column center of neighborhood.  Note: moving as block, not sliding window.
+		for(std::size_t j = n/2; j < 1800 - n/2; j+=n)
+		{
+			// get max over neighborhood block.
+			uint32_t max_val = 0;
+			std::size_t max_loc = 0;
+			for(std::size_t ii = i; ii < i + n/2; ii++)
+			{
+				for(std::size_t jj = j; jj < j + n/2; jj++)
+				{
+					//max_hough_out[ii*1800+jj] = 255;
+					if(hough_out[ii * 1800 + jj] > max_val)
+					{
+						max_val = hough_out[ii * 1800 + jj];
+						max_loc = ii * 1800 + jj;
+					}
+				}
+			}
+			if(max_val > 0)
+			{
+				max_hough_out[max_loc] = max_val;
+				std::cout <<"max for neighborhood " << i << ',' << j << " set to:" << max_val << std::endl;
+			}
+		}
+	}
+	
 	std::iota(iota_cache.begin(),iota_cache.end(),0);
 	auto cmpfunc=[this](size_t ai,size_t bi){
 		return hough_out[ai] < hough_out[bi];
 	};
+	auto cmpfunc_max=[this,max_hough_out=max_hough_out](size_t ai,size_t bi){
+		return max_hough_out[ai] < max_hough_out[bi];
+	};
 	auto kiterpoint=iota_cache.begin() + iota_cache.size()-k;
-	std::nth_element(iota_cache.begin(),kiterpoint,iota_cache.end(),cmpfunc);
+	std::nth_element(iota_cache.begin(),kiterpoint,iota_cache.end(),cmpfunc);//cmpfunc_max); // doesn't this get the linearized coordinate of the highest valued components over the whole hough_out?  Not the local highest cluster seeds?
 	kiterpoint=iota_cache.begin() + iota_cache.size()-k;
 	
 	float itscale=1.0f/theta_scale;float irscale=1.0f/rho_scale;
@@ -70,7 +106,7 @@ void naive_hough2d_lines::top_k(unsigned int k,naive_hough2d_lines::pixel_point*
 		size_t count=hough_out[hi];
 		
 		naive_hough2d_lines::pixel_point pp;
-		pp.theta_rho_index=std::array<uint32_t,2>{hi % theta_n,hi/theta_n};
+		pp.theta_rho_index=std::array<uint32_t,2>{hi % theta_n,hi/theta_n}; // unravel the linearized iota_cache index into hough_out
 		pp.theta_rho=std::array<float,2>{itscale*static_cast<float>(pp.theta_rho_index[0]),irscale*static_cast<float>(pp.theta_rho_index[1])};
 		
 		std::array<float,2> cs=cs_theta_cache[pp.theta_rho_index[0]];

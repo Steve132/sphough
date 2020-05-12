@@ -69,6 +69,7 @@ template<class T>
 void plot_line(CImg<T>& img,const std::array<float,3>& ln,const T* colors)
 {
 	float a=ln[0],b=ln[1],c=ln[2];
+    std::cout << "a:" << a << " b:" << b << " c:" << c << std::endl;
 	std::array<point2d_t,2> corners{};
 	int csel=0;
 	float w=img.width()-1,h=img.height()-1;
@@ -103,10 +104,13 @@ int main()
 {
 	//fft_test();
 	//return 0;
-	CImg<unsigned char> image("../cards.jpg");
+	CImg<unsigned char> image("../diamond.jpg");                 //("../example_wide.jpg");
 	const unsigned char red[3]={0xFF,0x00,0x00};
-	
-	CImg<float> gscal=image.get_RGBtoHSL().get_channel(2);
+
+//RGB of blue: 134, 140,  138
+	CImg<float> blue=image.get_RGBtoHSL().get_channel(0);     //  get hue channel to match for blue
+	CImg<float> gscal = blue.get_threshold(40);
+	gscal.display();
 	
 	//gscal.display();
 	CImgList<float> z=gscal.get_gradient("xy",3);
@@ -117,14 +121,16 @@ int main()
 	zout.threshold(0.013f);
 	
 	static constexpr unsigned int K=32;
+ // Resolution of 1800 degrees for theta and rho 1024 pixels.
 	naive_hough2d_lines lines({zout.width(),zout.height()},{1800,1024});
 	auto t=std::chrono::high_resolution_clock::now();
 	
 	lines.load_frame([&zout](size_t x,size_t y) { return zout(x,y,0,0) > 0.5f; });
-	lines.process_samples();	
+	lines.process_samples();
 	std::array<naive_hough2d_lines::pixel_point,K> pointsout;
 	lines.top_k(K,&pointsout[0]);
 	unsigned int newk=lines.cluster_top_k(K,&pointsout[0],0.1,40.0f);
+	std::cout <<  "newk:" <<  newk <<  std::endl;
 	
 	double elapsed=std::chrono::duration<double>(std::chrono::high_resolution_clock::now()-t).count();
 	std::cout << "Elapsed time: " << elapsed << std::endl;
@@ -139,6 +145,7 @@ int main()
 	for(unsigned k=0;k<newk;k++) 
 	{
 		auto pp=pointsout[k];
+		zimg(pp.theta_rho_index[0],pp.theta_rho_index[1],0,0)=255;
 		zimg(pp.theta_rho_index[0],pp.theta_rho_index[1],0,1)=0;
 		zimg(pp.theta_rho_index[0],pp.theta_rho_index[1],0,2)=0;
 		plot_line(image,pointsout[k].line,red);
