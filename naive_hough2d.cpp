@@ -111,7 +111,8 @@ unsigned int naive_hough2d_lines::cluster_top_k(
 	unsigned int K,pixel_point* points,
 	float theta_boundary,float rho_boundary) const
 {
-	
+	rho_boundary*=rho_max;
+	std::cerr << "RB: " << rho_boundary << std::endl;
 	std::vector<pixel_point> clusters;
 	//std::iota(cluster_assignments.begin(),cluster_assignments.end(),0);	
 	for(unsigned int i=0;i<K;i++)

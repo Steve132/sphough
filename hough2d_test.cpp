@@ -130,7 +130,7 @@ int main()
 	std::array<naive_hough2d_lines::pixel_point,K> pointsout;
 	lines.top_k(K,&pointsout[0]);
 	unsigned int newk=K;
-	newk=lines.cluster_top_k(K,&pointsout[0],0.1,40.0f); //percent of the image.
+	newk=lines.cluster_top_k(K,&pointsout[0],0.1,0.02f); //percent of the image.
 	std::cout <<  "newk:" <<  newk <<  std::endl;
 	
 	double elapsed=std::chrono::duration<double>(std::chrono::high_resolution_clock::now()-t).count();
