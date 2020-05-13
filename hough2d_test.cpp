@@ -112,7 +112,7 @@ int main()
 	CImg<float> gscal = blue.get_threshold(40);
 	gscal.display();
 	
-	//gscal.display();
+	gscal.display();
 	CImgList<float> z=gscal.get_gradient("xy",3);
 	CImg<float> zout=z[0].get_mul(z[0])+z[1].get_mul(z[1]);
 	//float mx=zout.max();
