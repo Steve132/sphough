@@ -66,28 +66,29 @@ static inline point2d_t cross(const line2d_t& a,const line2d_t& b)
 }
 
 template<class T>
-void plot_line(CImg<T>& img,const std::array<float,3>& ln,const T* colors)
+void plot_line(CImg<T>& img,const std::array<float,3>& lnin,const T* colors)
 {
+	line2d_t ln=lnin;
 	float a=ln[0],b=ln[1],c=ln[2];
     std::cout << "a:" << a << " b:" << b << " c:" << c << std::endl;
 	std::array<point2d_t,2> corners{};
 	int csel=0;
 	float w=img.width()-1,h=img.height()-1;
 	std::array<line2d_t,4> walls{line2d_t{1.0f,0.0f,-w},line2d_t{1.0,0.0f,0.0f},line2d_t{0.0f,1.0f,-h},line2d_t{0.0,1.0f,0.0f}};
-	
+
 	for(unsigned int i=0;i<4;i++)
 	{
 		point2d_t isect=cross(ln,walls[i]);
 		if(fabs(isect[2]) < 0.00000001)
 		{
-		//	continue;
+			continue;
 		}
 		isect[0]/=isect[2];isect[1]/=isect[2];
-		std::cout << "Wall " << i << std::endl;
+		std::cout << "Wall " << i<< ":" << walls[i][0] << "," << walls[i][1] << "," << walls[i][2] <<  std::endl;
 		std::cout << "Line: " << ln[0] << "," << ln[1] << "," << ln[2] << std::endl;
 		std::cout << "Isect: " << isect[0] << "," << isect[1] << std::endl;
 		
-		if(isect[0] >= 0.0f && isect[0] <= w && isect[1] >= 0.0f && isect[1] <= h)
+		if(int(isect[0]) >= 0 && int(isect[0]) <= int(w) && int(isect[1]) >= 0 && int(isect[1]) <= int(h))
 		{
 			corners[csel++]=isect;
 			std::cout << "Found corner" << csel << std::endl;
@@ -112,7 +113,6 @@ int main()
 	CImg<float> gscal = blue.get_threshold(40);
 	gscal.display();
 	
-	gscal.display();
 	CImgList<float> z=gscal.get_gradient("xy",3);
 	CImg<float> zout=z[0].get_mul(z[0])+z[1].get_mul(z[1]);
 	//float mx=zout.max();
@@ -120,7 +120,7 @@ int main()
 	zout.normalize(0.0f,1.0f);
 	zout.threshold(0.013f);
 	
-	static constexpr unsigned int K=32;
+	static constexpr unsigned int K=128;
  // Resolution of 1800 degrees for theta and rho 1024 pixels.
 	naive_hough2d_lines lines({zout.width(),zout.height()},{1800,1024});
 	auto t=std::chrono::high_resolution_clock::now();
@@ -129,7 +129,8 @@ int main()
 	lines.process_samples();
 	std::array<naive_hough2d_lines::pixel_point,K> pointsout;
 	lines.top_k(K,&pointsout[0]);
-	unsigned int newk=lines.cluster_top_k(K,&pointsout[0],0.1,40.0f);
+	unsigned int newk=K;
+	newk=lines.cluster_top_k(K,&pointsout[0],0.1,40.0f); //percent of the image.
 	std::cout <<  "newk:" <<  newk <<  std::endl;
 	
 	double elapsed=std::chrono::duration<double>(std::chrono::high_resolution_clock::now()-t).count();
@@ -148,7 +149,9 @@ int main()
 		zimg(pp.theta_rho_index[0],pp.theta_rho_index[1],0,0)=255;
 		zimg(pp.theta_rho_index[0],pp.theta_rho_index[1],0,1)=0;
 		zimg(pp.theta_rho_index[0],pp.theta_rho_index[1],0,2)=0;
+		//CImg<unsigned char> image2=image;
 		plot_line(image,pointsout[k].line,red);
+		//image2.display();
 	}
 	
 	zimg.display();

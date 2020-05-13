@@ -23,7 +23,8 @@ base_hough2d_lines::base_hough2d_lines(
 		theta_n=1800;
 	}
 	
-	rho_scale=(rho_n-1)/rho_max;
+	rho_scale=(rho_n-1)/(2.0f*rho_max);
+	rho_offset=(rho_n-1)/2;
 	theta_scale=(theta_n-1)/M_PI;
 }
 	

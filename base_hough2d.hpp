@@ -12,6 +12,7 @@ protected:
 	std::vector<std::array<uint32_t,2>> sparse_samples;
 	
 	float rho_scale;
+	float rho_offset;
 	float rho_max;
 	float theta_scale;
 public:
