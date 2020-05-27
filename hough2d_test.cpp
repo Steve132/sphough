@@ -1,4 +1,4 @@
-#include<Eigen/Core>
+#include<Eigen/Dense>
 #include<iostream>
 #define cimg_use_jpeg
 #include<CImg.h>

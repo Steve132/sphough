@@ -69,7 +69,8 @@ void naive_hough2d_lines::top_k(unsigned int k,naive_hough2d_lines::pixel_point*
 		size_t count=hough_out[hi];
 		
 		naive_hough2d_lines::pixel_point pp;
-		pp.theta_rho_index=std::array<uint32_t,2>{hi % theta_n,hi/theta_n};
+		pp.theta_rho_index=std::array<uint32_t,2>{static_cast<uint32_t>(hi % theta_n),
+												  static_cast<uint32_t>(hi/theta_n)};
 		pp.theta_rho=std::array<float,2>{
 			itscale*static_cast<float>(pp.theta_rho_index[0]),
 			irscale*(static_cast<float>(pp.theta_rho_index[1])-rho_offset)
