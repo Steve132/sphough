@@ -19,7 +19,7 @@ if(NOT ANDROID)
 add_executable(hough2d_test
 	hough2d_test.cpp
 )
-
+target_link_libraries(hough2d PUBLIC X11)
 
 set_target_properties(hough2d_test PROPERTIES
     CXX_STANDARD 11
