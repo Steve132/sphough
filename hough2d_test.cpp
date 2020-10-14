@@ -10,11 +10,13 @@ using namespace cimg_library;
 #include "sparse_hough2d.hpp"
 #include "naive_hough2d.hpp"
 
+/*
 static inline double timit()
 {
 	auto t=std::chrono::high_resolution_clock::now();
+	return t;
 }
-
+*/
 
 void perftest(const CImg<float>& zout)
 {

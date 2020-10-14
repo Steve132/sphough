@@ -89,13 +89,13 @@ static bool cluster_inside(const naive_hough2d_lines::pixel_point& cluster,const
 }
 
 
-static std::ostream& operator<<(std::ostream& out,const naive_hough2d_lines::pixel_point& pp)
+std::ostream& operator<<(std::ostream& out,const naive_hough2d_lines::pixel_point& pp)
 {
 	return out << "{theta:" << pp.theta_rho[0] 
-				<< " rho:" << pp.theta_rho[1]
-				<< " count: " << pp.count 
-				<< " line:(" << pp.line[0] << "," << pp.line[1] << "," << pp.line[2] << ")"
-				<< "}";
+	<< " rho:" << pp.theta_rho[1]
+	<< " count: " << pp.count 
+	<< " line:(" << pp.line[0] << "," << pp.line[1] << "," << pp.line[2] << ")"
+	<< "}";
 }
 
 static naive_hough2d_lines::pixel_point& operator+=(
@@ -107,6 +107,7 @@ static naive_hough2d_lines::pixel_point& operator+=(
 		clu.theta_rho[tri]=(clu.theta_rho[tri]*clu.count+pp.theta_rho[tri]*pp.count)/newcount;	
 	clu.count+=pp.count;
 	//restore the line after
+	return clu;
 }
 unsigned int naive_hough2d_lines::cluster_top_k(
 	unsigned int K,pixel_point* points,
@@ -129,17 +130,17 @@ unsigned int naive_hough2d_lines::cluster_top_k(
 		}
 		if(proposed_cluster==clusters.size())
 		{
-			std::cout << points[i] << " is a new cluster." << std::endl;
+			std::cerr << points[i] << " is a new cluster." << std::endl;
 			clusters.push_back(points[i]);
 		}
 		else
 		{
 			pixel_point& clu=clusters[proposed_cluster];
 			const pixel_point& pp=points[i];
-			std::cout << "adding " << pp << " to " << clu << "\n\tResults in";
+			std::cerr << "adding " << pp << " to " << clu << "\n\tResults in";
 			clu+=pp;
 			clu.count+=pp.count;
-			std::cout << clu << std::endl;
+			std::cerr << clu << std::endl;
 		}
 	}
 	
@@ -151,7 +152,7 @@ unsigned int naive_hough2d_lines::cluster_top_k(
 		
 		clu.line=to_line(cosf(clu.theta_rho[0]),sinf(clu.theta_rho[0]),clu.theta_rho[1]);
 		points[ki]=clu;
-		std::cout << "c " << ki << "=" << points[ki] << std::endl;
+		std::cerr<< "c " << ki << "=" << points[ki] << std::endl;
 	}
 	return clusters.size();
 }

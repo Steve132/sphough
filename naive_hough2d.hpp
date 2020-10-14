@@ -4,6 +4,7 @@
 #include "base_hough2d.hpp"
 #include<atomic>
 #include<memory>
+#include<iostream>
 
 
 //the real header should be a pimpl
@@ -33,6 +34,8 @@ public:
 	void top_k(unsigned k,pixel_point* pout) const;
 	unsigned int cluster_top_k(unsigned k,pixel_point* pointsinout,float theta_boundary,float rho_percentage_boundary) const;
 };
+
+std::ostream& operator<<(std::ostream& out,const naive_hough2d_lines::pixel_point& pp);
 
 
 #endif
